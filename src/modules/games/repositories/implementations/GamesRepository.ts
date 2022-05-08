@@ -1,4 +1,4 @@
-import { getRepository, Repository } from 'typeorm';
+import { getRepository, Repository, } from 'typeorm';
 
 import { User } from '../../../users/entities/User';
 import { Game } from '../../entities/Game';
@@ -13,18 +13,33 @@ export class GamesRepository implements IGamesRepository {
   }
 
   async findByTitleContaining(param: string): Promise<Game[]> {
-    return this.repository
+    const games = await this.repository
       .createQueryBuilder()
-      // Complete usando query builder
+      .select('games')
+      .from(Game, 'games')
+      .where("games.title ILIKE :title", { title: `%${param}%` })
+      .getMany();
+
+    return games
   }
 
   async countAllGames(): Promise<[{ count: string }]> {
-    return this.repository.query(); // Complete usando raw query
+    return this.repository.query(`
+      SELECT COUNT(id) as count
+      FROM games;
+    `);
   }
 
   async findUsersByGameId(id: string): Promise<User[]> {
-    return this.repository
+    const users = await this.repository
       .createQueryBuilder()
-      // Complete usando query builder
+      .select('users')
+      .from(User, 'users')
+      .innerJoin('users.games', 'games')
+      .where('games.id = :id', { id })
+      .getMany()
+
+    return users
   }
+
 }
